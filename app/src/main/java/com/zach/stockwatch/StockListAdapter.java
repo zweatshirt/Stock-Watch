@@ -9,7 +9,9 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.text.DecimalFormat;
 import java.util.List;
+import java.util.Locale;
 
 /* StockListAdapter adapts view holders to recycler view */
 public class StockListAdapter extends RecyclerView.Adapter<StockViewHolder> {
@@ -41,8 +43,12 @@ public class StockListAdapter extends RecyclerView.Adapter<StockViewHolder> {
 
         if (checkNulls(stock)) {
             holder.stockName.setText(stock.getStockName());
-            String price = String.format("$%s", stock.getStockPrice());
-            holder.stockPrice.setText(price);
+//            String dblPriceStr = stock.getStockPrice();
+            Double price = Double.parseDouble(stock.getStockPrice());
+            DecimalFormat df = new DecimalFormat("##########.00");
+            String priceStr = "$" + df.format(price);
+            holder.stockPrice.setText(priceStr);
+
             Double percent = Double.parseDouble(stock.getStockPercent());
             percent = percent * 100.0;
             percent = Math.round(percent * 100.0) / 100.0;
@@ -69,8 +75,8 @@ public class StockListAdapter extends RecyclerView.Adapter<StockViewHolder> {
         } else {
             String emptyName = "No name loaded";
             holder.stockName.setText(emptyName);
-            holder.stockPercent.setText("0");
-            holder.stockPrice.setText("0");
+            holder.stockPercent.setText("0%");
+            holder.stockPrice.setText("$0");
         }
     }
 

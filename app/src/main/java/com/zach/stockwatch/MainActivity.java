@@ -74,16 +74,19 @@ public class MainActivity extends AppCompatActivity implements
         sView = findViewById(R.id.stock_rview);
         swipe = findViewById(R.id.swipe);
 
+        // refactor, just too tired currently
         swipe.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
+                if (isNetworkConnected()) {
+                    if (stockSymbols.isEmpty()) {
+                        new Thread(new GetSymbols(MainActivity.this)).start();
+                    }
+                }
                 if (!stocks.isEmpty()) {
                     doRefresh(true);
-//                    if(!isNetworkConnected()) {
-//                        doRefresh(false);
-//                        showNoConnectionDialog();
-//                    } else
-                   new Thread(new UpdateInfo(MainActivity.this, stocks)).start();
+                    if (isNetworkConnected())
+                        new Thread(new UpdateInfo(MainActivity.this, stocks)).start();
                 }
                 doRefresh(false);
             }
@@ -95,17 +98,21 @@ public class MainActivity extends AppCompatActivity implements
         dbHandler = new DbHandler(this);
 
         stocks.clear();
-
-        // FIX
-        // get stocks from DB and store in temp list
         List<Stock> temp = new ArrayList<>(dbHandler.loadStocks());
-
         // load stock symbols data for search and select
-        new Thread(new GetSymbols(this)).start();
-
         if (isNetworkConnected()) {
+            new Thread(new GetSymbols(this)).start();
             if (!temp.isEmpty())
                 new Thread(new UpdateInfo(this, temp)).start();
+        }
+        else {
+            for (Stock tempStock : temp) {
+                tempStock.setStockPercent("0");
+                tempStock.setStockChange("0.00");
+                tempStock.setStockPrice("0.00");
+            }
+            stocks.addAll(temp);
+            adapter.notifyDataSetChanged();
         }
         // else showNoConnectionDialog();
     }
