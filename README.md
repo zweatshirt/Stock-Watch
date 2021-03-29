@@ -1,7 +1,7 @@
 # Stock-Watch
 CS442 Stock Watch Application Project
 
-- Still need to test when lack of connection.
+- Still need to test when user lacks connection.
 - Also never had a chance to test my app while market was actually open...
 
 - Implements multi-threading
