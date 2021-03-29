@@ -12,6 +12,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -77,7 +79,11 @@ public class MainActivity extends AppCompatActivity implements
             public void onRefresh() {
                 if (!stocks.isEmpty()) {
                     doRefresh(true);
-                    new Thread(new UpdateInfo(MainActivity.this, stocks)).start();
+//                    if(!isNetworkConnected()) {
+//                        doRefresh(false);
+//                        showNoConnectionDialog();
+//                    } else
+                   new Thread(new UpdateInfo(MainActivity.this, stocks)).start();
                 }
                 doRefresh(false);
             }
@@ -101,7 +107,7 @@ public class MainActivity extends AppCompatActivity implements
             if (!temp.isEmpty())
                 new Thread(new UpdateInfo(this, temp)).start();
         }
-        else showNoConnectionDialog();
+        // else showNoConnectionDialog();
     }
 
     public void doRefresh(boolean yes) {
@@ -139,15 +145,18 @@ public class MainActivity extends AppCompatActivity implements
                                     stocksToDisplay.add(stockSymbols.get(i).getSymbol());
                                 }
                             }
-                            if (stocksToDisplay.size() == 1)  {
-                                String stockToAdd = stocksToDisplay.get(0);
-                                doRefresh(true);
-                                addStockToList(stockToAdd);
+                            if (isNetworkConnected()) {
+                                if (stocksToDisplay.size() == 1)  {
+                                    String stockToAdd = stocksToDisplay.get(0);
+                                    doRefresh(true);
+                                    addStockToList(stockToAdd);
+                                }
+                                else if (stocksToDisplay.size() > 1) {
+                                    makeNewListDialog(stocksToDisplay);
+                                }
+                                else symbolNotFoundDialog(userQuery);
                             }
-                            else if (stocksToDisplay.size() > 1) {
-                                makeNewListDialog(stocksToDisplay);
-                            }
-                            else { symbolNotFoundDialog(userQuery); }
+                            else showNoConnectionDialog();
                         }
                         else Toast.makeText(MainActivity.this,
                             "Stock symbols must be fully capitalized", Toast.LENGTH_LONG).show();
@@ -171,6 +180,7 @@ public class MainActivity extends AppCompatActivity implements
     // I had to create custom dialogs every time bc .setTitle() and .setMessage()
     // decided to stop working for ALL of my dialogs on this project.
     public void showNoConnectionDialog() {
+        doRefresh(false);
         LayoutInflater inflater = LayoutInflater.from(this);
         @SuppressLint("InflateParams")
         final View view = inflater.inflate(R.layout.no_connection_dialog, null);
@@ -291,8 +301,12 @@ public class MainActivity extends AppCompatActivity implements
 
     // check connectivity of user
     private boolean isNetworkConnected() {
-        ConnectivityManager cManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        return cManager.getActiveNetworkInfo() != null && cManager.getActiveNetworkInfo().isConnected();
+        ConnectivityManager cm =
+                (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        return activeNetwork != null &&
+                activeNetwork.isConnectedOrConnecting();
     }
 
     // method for onClick to go to stock website
@@ -343,8 +357,10 @@ public class MainActivity extends AppCompatActivity implements
     public void onClick(View v) {
         int pos = sView.getChildLayoutPosition(v);
         if (stocks != null) {
-            String stockSym = stocks.get(pos).getSymbol();
-            goToStockUrl(stockSym);
+            if (isNetworkConnected()) {
+                String stockSym = stocks.get(pos).getSymbol();
+                goToStockUrl(stockSym);}
+            else showNoConnectionDialog();
         }
     }
 
